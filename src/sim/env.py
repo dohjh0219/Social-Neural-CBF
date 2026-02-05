@@ -55,4 +55,4 @@ class SocialNavEnv:
         # 궤적 업데이트
         self.traj_patch.set_data(self.traj_x, self.traj_y)
         
-        plt.pause(0.001) # 잠시 멈춰서 화면 갱신
+        plt.pause(0.05) # 잠시 멈춰서 화면 갱신
