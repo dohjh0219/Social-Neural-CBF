@@ -13,34 +13,35 @@ class EllipticalCBF(ControlBarrierFunction):
 
     def _get_ellipse_params(self, human_vel):
         """
-        사람(또는 로봇)의 속도에 따라 타원 크기 동적 결정
+        Determine Ellipse parameters by person(or robot)'s velocity.
         """
-        # 1. 속도 및 헤딩 계산
+        # Calculate speed and theta
         speed = np.linalg.norm(human_vel)
         if speed > 0.01:
             theta = np.arctan2(human_vel[1], human_vel[0])
         else:
             theta = 0.0
             
-        # 2. [핵심 수정] 속도 비례형 타원 크기 (Linear Approximation of Eq. 13)
-        # 속도가 빠를수록 안전구역이 커짐
+        # Adaptive Ellipse size by speed.(eq. 13에 이용되는 a(s_r)과 b(s_r)에 해당됨.)
+        # 속도가 빠를수록 ellipse 커짐
         current_a = self.base_a + self.scale_a * speed
         current_b = self.base_b + self.scale_b * speed
         
         return current_a, current_b, theta
 
-    def get_value(self, robot_state, human_state):
+    def get_value(self, robot_state, human_state): # cbf value calculate
+        # Eq. 18
         p_r = robot_state[:2]
         p_h = human_state[:2]
         v_h = human_state[2:]
         
-        # 동적 파라미터 가져오기
         a, b, theta = self._get_ellipse_params(v_h)
+        # 사람 속도에 따라 ellipse 사이즈 달라짐.
         
-        # a가 b보다 작아지는 예외 상황 방지
+        # a < b ; Exceptional event X
         if a < b: a, b = b, a + 0.01
             
-        # 초점 거리 c
+        # 초점 c
         c_len = np.sqrt(a**2 - b**2)
         
         # 초점 벡터 회전
@@ -48,13 +49,11 @@ class EllipticalCBF(ControlBarrierFunction):
         sin_t = np.sin(theta)
         c_vec = np.array([c_len * cos_t, c_len * sin_t])
         
-        c1 = p_h + c_vec
-        c2 = p_h - c_vec
-        
-        # 거리 합 계산
+        c1 = p_h + c_vec # 앞쪽 초점
+        c2 = p_h - c_vec # 뒤쪽 초점
+
+        # h(x)  : Eq 18
         dist_sum = np.linalg.norm(p_r - c1) + np.linalg.norm(p_r - c2)
-        
-        # h(x)
         h_val = (dist_sum / 2.0) - a
         
         return h_val

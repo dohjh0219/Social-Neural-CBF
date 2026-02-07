@@ -36,7 +36,7 @@ class RobotDynamics:
         """
         next_state = self.A @ state + self.B @ control_input
         
-        # 속도 제한 (Clipping) - 현실적인 물리 거동을 위해 추가
+        # Speed Cliping
         vel = next_state[2:]
         speed = np.linalg.norm(vel)
         if speed > self.v_max:
